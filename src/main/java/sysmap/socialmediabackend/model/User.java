@@ -9,10 +9,18 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class User {
 
     @Id
-    private String id = UUID.randomUUID().toString();
+    private String id;
     private String username;
     private String email;
     private String password;
+
+    public String getId() {
+        return UUID.randomUUID().toString();
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public String getUsername() {
         return username;
