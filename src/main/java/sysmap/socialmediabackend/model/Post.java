@@ -18,7 +18,7 @@ import org.springframework.data.mongodb.core.mapping.DBRef;
 @Document(collection = "posts")
 public class Post {
     @Id
-    private String id = UUID.randomUUID().toString();;
+    private String id;
     private String author;
     private String content;
     private LocalDateTime createdAt;
