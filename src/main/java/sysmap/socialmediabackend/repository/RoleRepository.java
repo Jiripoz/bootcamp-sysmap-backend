@@ -1,8 +1,11 @@
 package sysmap.socialmediabackend.repository;
 
 import sysmap.socialmediabackend.model.Role;
+import sysmap.socialmediabackend.model.ERole;
+import java.util.Optional;
+
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface RoleRepository extends MongoRepository<Role, String> {
-    Role findByName(String username);
+  Optional<Role> findByName(ERole name);
 }

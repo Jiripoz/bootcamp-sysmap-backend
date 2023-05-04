@@ -1,76 +1,133 @@
 package sysmap.socialmediabackend.controller;
 
-import sysmap.socialmediabackend.model.User;
-import sysmap.socialmediabackend.model.UserDto;
-import sysmap.socialmediabackend.services.UserService;
-
-import jakarta.validation.Valid;
-
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-@Controller
+import javax.validation.Valid;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import sysmap.socialmediabackend.model.ERole;
+import sysmap.socialmediabackend.model.Role;
+import sysmap.socialmediabackend.model.User;
+import sysmap.socialmediabackend.payload.request.LoginRequest;
+import sysmap.socialmediabackend.payload.request.SignupRequest;
+import sysmap.socialmediabackend.payload.response.UserInfoResponse;
+import sysmap.socialmediabackend.payload.response.MessageResponse;
+import sysmap.socialmediabackend.repository.RoleRepository;
+import sysmap.socialmediabackend.repository.UserRepository;
+import sysmap.socialmediabackend.security.jwt.JwtUtils;
+import sysmap.socialmediabackend.security.services.UserDetailsImpl;
+
+@CrossOrigin(origins = "*", maxAge = 3600)
+@RestController
+@RequestMapping("/api/auth")
 public class AuthController {
+  @Autowired
+  AuthenticationManager authenticationManager;
 
-    private UserService userService;
+  @Autowired
+  UserRepository userRepository;
 
-    public AuthController(UserService userService) {
-        this.userService = userService;
+  @Autowired
+  RoleRepository roleRepository;
+
+  @Autowired
+  PasswordEncoder encoder;
+
+  @Autowired
+  JwtUtils jwtUtils;
+
+  @PostMapping("/signin")
+  public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+
+    Authentication authentication = authenticationManager.authenticate(
+        new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
+
+    SecurityContextHolder.getContext().setAuthentication(authentication);
+
+    UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+
+    ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(userDetails);
+
+    List<String> roles = userDetails.getAuthorities().stream()
+        .map(item -> item.getAuthority())
+        .collect(Collectors.toList());
+
+    return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+        .body(new UserInfoResponse(userDetails.getId(),
+                                   userDetails.getUsername(),
+                                   userDetails.getEmail(),
+                                   roles));
+  }
+
+  @PostMapping("/signup")
+  public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
+    if (userRepository.existsByUsername(signUpRequest.getUsername())) {
+      return ResponseEntity
+          .badRequest()
+          .body(new MessageResponse("Error: Username is already taken!"));
     }
 
-    // handler method to handle home page request
-    @GetMapping("/index")
-    public String home(){
-        return "index";
+    if (userRepository.existsByEmail(signUpRequest.getEmail())) {
+      return ResponseEntity
+          .badRequest()
+          .body(new MessageResponse("Error: Email is already in use!"));
     }
 
-    // handler method to handle login request
-    @GetMapping("/login")
-    public String login(){
-        return "login";
-    }
+    // Create new user's account
+    User user = new User(signUpRequest.getUsername(), 
+                         signUpRequest.getEmail(),
+                         encoder.encode(signUpRequest.getPassword()));
 
-    // handler method to handle user registration form request
-    @GetMapping("/register")
-    public String showRegistrationForm(Model model){
-        // create model object to store form data
-        UserDto user = new UserDto();
-        model.addAttribute("user", user);
-        return "register";
-    }
+    Set<String> strRoles = signUpRequest.getRoles();
+    Set<Role> roles = new HashSet<>();
 
-    // handler method to handle user registration form submit request
-    @PostMapping("/register/save")
-    public String registration(@Valid @ModelAttribute("user") UserDto userDto,
-                               BindingResult result,
-                               Model model){
-        User existingUser = userService.findUserByEmail(userDto.getEmail());
+    if (strRoles == null) {
+      Role userRole = roleRepository.findByName(ERole.ROLE_USER)
+          .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+      roles.add(userRole);
+    } else {
+      strRoles.forEach(role -> {
+        switch (role) {
+        case "admin":
+          Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
+              .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+          roles.add(adminRole);
 
-        if(existingUser != null && existingUser.getEmail() != null && !existingUser.getEmail().isEmpty()){
-            result.rejectValue("email", null,
-                    "There is already an account registered with the same email");
+          break;
+        case "mod":
+          Role modRole = roleRepository.findByName(ERole.ROLE_MODERATOR)
+              .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+          roles.add(modRole);
+
+          break;
+        default:
+          Role userRole = roleRepository.findByName(ERole.ROLE_USER)
+              .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+          roles.add(userRole);
         }
-
-        if(result.hasErrors()){
-            model.addAttribute("user", userDto);
-            return "/register";
-        }
-
-        userService.saveUser(userDto);
-        return "redirect:/register?success";
+      });
     }
 
-    // handler method to handle list of users
-    @GetMapping("/users")
-    public String users(Model model){
-        List<UserDto> users = userService.findAllUsers();
-        model.addAttribute("users", users);
-        return "users";
-    }
+    user.setRoles(roles);
+    userRepository.save(user);
+
+    return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+  }
 }
