@@ -32,6 +32,9 @@ public class User {
     @DBRef
     private Set<Role> roles = new HashSet<>();
 
+    @DBRef
+    private Set<User> followers = new HashSet<>();
+
     public User() {
     }
 
@@ -80,4 +83,12 @@ public class User {
     public void setRoles(Set<Role> roles) {
     this.roles = roles;
     }
+
+    public Set<User> getFollowers() {
+        return followers;
     }
+
+    public void setFollowers(Set<User> followers) {
+    this.followers = followers;
+    }
+}
