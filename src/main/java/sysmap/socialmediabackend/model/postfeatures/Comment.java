@@ -1,6 +1,7 @@
 package sysmap.socialmediabackend.model.postfeatures;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -16,7 +17,7 @@ import sysmap.socialmediabackend.model.User;
 @NoArgsConstructor
 public class Comment {
     @Id
-    private String id;
+    private String id = UUID.randomUUID().toString();
     private String content;
     @CreatedDate
     private LocalDateTime createdAt;
