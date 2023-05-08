@@ -89,6 +89,6 @@ public class User {
     }
 
     public void setFollowers(Set<User> followers) {
-        this.followers = followers;
+    this.followers = followers;
     }
 }

@@ -1,0 +1,21 @@
+roles:
+  ADMIN:
+    privileges:
+      - CREATE_POST
+      - EDIT_POST
+      - DELETE_POST
+      - VIEW_USERS
+      - EDIT_USERS
+      - DELETE_USERS
+  MODERATOR:
+    privileges:
+      - CREATE_POST
+      - EDIT_POST
+      - DELETE_POST
+      - VIEW_USERS
+  USER:
+    privileges:
+      - CREATE_POST
+      - EDIT_OWN_POST
+      - DELETE_OWN_POST
+      - VIEW_OWN_POSTS
