@@ -9,11 +9,11 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
 import sysmap.socialmediabackend.config.jwt.JwtUtils;
 import sysmap.socialmediabackend.model.Post;
-import sysmap.socialmediabackend.model.Role;
 import sysmap.socialmediabackend.model.User;
 import sysmap.socialmediabackend.model.postfeatures.Comment;
 import sysmap.socialmediabackend.repository.PostRepository;
 import sysmap.socialmediabackend.repository.UserRepository;
+import sysmap.socialmediabackend.services.AuthorizationService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,12 +27,12 @@ public class PostController {
 
     @Autowired
     private JwtUtils jwtUtils;
-
     @Autowired
     private PostRepository postRepository;
-
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private AuthorizationService authorizationService;
 
     @GetMapping
     public List<Post> getAllPosts() {
@@ -40,12 +40,16 @@ public class PostController {
     }
 
     @PostMapping
-    public Post createPost(@RequestBody Post post, HttpServletRequest request, Authentication authentication) throws Exception {
+    public ResponseEntity<Post> createPost(@RequestBody Post post, HttpServletRequest request, Authentication authentication) throws Exception {
         User currentUser = getCurrentUser(request);
+        if (!authorizationService.isAuthorized("can_create_posts", currentUser.getRoles())){
+            return ResponseEntity.notFound().build();
+        }
         post.setCreatedAt(LocalDateTime.now());
         post.setUser(currentUser);
         post.setAuthor(currentUser.getUsername());
-        return postRepository.save(post);
+        postRepository.save(post);
+        return ResponseEntity.ok(post);
     }
 
     @GetMapping("/{id}")
@@ -67,13 +71,17 @@ public class PostController {
         postRepository.deleteById(id);
     }
 
-    // Add a comment to a post
     @PostMapping("/{id}/comments")
     public ResponseEntity<Post> addComment(@PathVariable String id, @RequestBody Comment comment, HttpServletRequest request) {
+        User currentUser = getCurrentUser(request);
+        if (!authorizationService.isAuthorized("can_comment_on_posts", currentUser.getRoles())){
+            return ResponseEntity.notFound().build();
+        }
         Optional<Post> optionalPost = postRepository.findById(id);
         if (optionalPost.isPresent()) {
             Post post = optionalPost.get();
             comment.setUser(getCurrentUser(request));
+            comment.setCreatedAt(LocalDateTime.now());
             post.addComment(comment);
             postRepository.save(post);
             return ResponseEntity.ok(post);
@@ -82,27 +90,42 @@ public class PostController {
         }
     }
 
-    @PostMapping("/{id}/comments/{commentId}")
+    
+    @DeleteMapping("/{id}/comments/{commentId}")
     public ResponseEntity<Post> removeComment(@PathVariable String id, @PathVariable String commentId, HttpServletRequest request) {
         Optional<Post> optionalPost = postRepository.findById(id);
         if(!optionalPost.isPresent()){
             return ResponseEntity.notFound().build();
         }
         Post post = optionalPost.get();
+
         User currentUser = getCurrentUser(request);
+        User commentOwner = post.getCommentOwner(commentId);
+
+        if (!(authorizationService.isAuthorized("can_delete_comments", currentUser.getRoles()) || (commentOwner.equals(currentUser))
+        )){
+            return ResponseEntity.badRequest().build();
+        }
         post.removeComment(commentId, currentUser);
+        postRepository.save(post);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{id}/like")
     public ResponseEntity<String> likePost(@PathVariable String id, HttpServletRequest request) {
-        User user = getCurrentUser(request);
+        User currentUser = getCurrentUser(request);
+        if (!authorizationService.isAuthorized("can_like_posts", currentUser.getRoles())){
+            return ResponseEntity.badRequest().body("User lack authentication");
+        }
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Post not found. Post id: "+ id));
-        if (post.getLikes().contains(user)) {
-            return ResponseEntity.badRequest().body("User already liked this post");
+        Set<String> likeByUserId = post.likeIdSet();
+        if (likeByUserId.contains(currentUser.getId())) {
+            post.removeLike(currentUser.getId());
+            postRepository.save(post);
+            return ResponseEntity.ok("Post unliked successfully");
         }
-        post.addLike(user);
+        post.addLike(currentUser);
         postRepository.save(post);
         return ResponseEntity.ok("Post liked successfully");
     }

@@ -1,0 +1,27 @@
+{
+    "ADMIN": {
+      "can_delete_users": true,
+      "can_delete_posts": true,
+      "can_edit_posts": true,
+      "can_like_posts": true,
+      "can_comment_on_posts": true,
+      "can_follow_users": true,
+      "can_delete_comments": true,
+      "can_create_posts": true
+    },
+    "MODERATOR": {
+      "can_delete_comments": true,
+      "can_delete_posts": true,
+      "can_edit_posts": true,
+      "can_like_posts": true,
+      "can_comment_on_posts": true,
+      "can_follow_users": true
+    },
+    "USER": {
+      "can_edit_own_posts": true,
+      "can_like_posts": true,
+      "can_comment_on_posts": true,
+      "can_follow_users": true,
+      "can_create_posts": true
+    }
+  }
