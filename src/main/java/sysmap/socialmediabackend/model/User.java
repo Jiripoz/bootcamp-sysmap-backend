@@ -2,6 +2,7 @@ package sysmap.socialmediabackend.model;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -34,6 +35,9 @@ public class User {
 
     @DBRef
     private Set<User> followers = new HashSet<>();
+
+    @DBRef
+    private Set<User> following = new HashSet<>();
 
     public User() {
     }
@@ -88,7 +92,32 @@ public class User {
         return followers;
     }
 
-    public void setFollowers(Set<User> followers) {
-    this.followers = followers;
+    public void setFollowers(User follower) {
+        this.followers.add(follower);
     }
+
+    public Set<User> getFollowing() {
+        return following;
+    }
+
+    public void setFollowing(User following) {
+    this.following.add(following);
+    }
+
+    public void removeFollowing(String following) {
+        this.following.removeIf(user -> user.getId().equals(following));
+    }
+
+    public void removeFollower(String follower) {
+        this.followers.removeIf(user -> user.getId().equals(follower));
+    }
+
+    public Set<String> followerIdSet(){
+        return this.followers.stream().map(User::getId).collect(Collectors.toSet());
+    }
+
+    public Set<String> followingIdSet(){
+        return this.following.stream().map(User::getId).collect(Collectors.toSet());
+    }
+
 }
