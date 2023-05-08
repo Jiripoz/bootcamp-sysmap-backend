@@ -115,7 +115,7 @@ public class PostController {
     public ResponseEntity<String> likePost(@PathVariable String id, HttpServletRequest request) {
         User currentUser = getCurrentUser(request);
         if (!authorizationService.isAuthorized("can_like_posts", currentUser.getRoles())){
-            return ResponseEntity.badRequest().body("User lack authentication");
+            return ResponseEntity.badRequest().body("User lack authorization");
         }
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Post not found. Post id: "+ id));
