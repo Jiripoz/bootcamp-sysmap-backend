@@ -1,0 +1,36 @@
+version: '3.9'
+
+services:
+  backend-app:
+    build: .
+    container_name: alan-franco-backend-app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/social_media_db
+      SPRING_DATA_MONGODB_DATABASE: social_media_db
+    networks:
+      - backend
+
+  mongodb:
+    image: mongo:latest
+    container_name: alan-franco-backend-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+    command: mongod --bind_ip_all && /usr/bin/mongo
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  mongodb-data:
