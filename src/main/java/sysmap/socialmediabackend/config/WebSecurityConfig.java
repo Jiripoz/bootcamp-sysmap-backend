@@ -23,7 +23,7 @@ import sysmap.socialmediabackend.config.services.UserDetailsServiceImpl;
     // securedEnabled = true,
     // jsr250Enabled = true,
     prePostEnabled = true)
-public class WebSecurityConfig { // extends WebSecurityConfigurerAdapter {
+public class WebSecurityConfig { 
   @Autowired
   UserDetailsServiceImpl userDetailsService;
 

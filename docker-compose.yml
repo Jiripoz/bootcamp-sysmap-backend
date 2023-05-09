@@ -10,6 +10,8 @@ services:
     environment:
       SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/social_media_db
       SPRING_DATA_MONGODB_DATABASE: social_media_db
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
     networks:
       - backend
 
@@ -21,9 +23,6 @@ services:
       - "27017:27017"
     volumes:
       - mongodb-data:/data/db
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: admin123
     command: mongod --bind_ip_all && /usr/bin/mongo
     networks:
       - backend

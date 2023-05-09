@@ -23,12 +23,6 @@ public class UserController {
 
     @Autowired
     private JwtUtils jwtUtils;
-    
-    @GetMapping
-    public void teste(HttpServletRequest request) {
-        User user = getCurrentUser(request);
-        System.out.println("teste teste teste steste"+user.getId());
-    }
 
     @GetMapping("/{id}/follow")
     public ResponseEntity<String> followUser(@PathVariable String id, HttpServletRequest request) {
