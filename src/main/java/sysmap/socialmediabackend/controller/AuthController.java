@@ -95,34 +95,26 @@ public class AuthController {
                             signUpRequest.getEmail(),
                             encoder.encode(signUpRequest.getPassword()));
 
-    Set<String> strRoles = signUpRequest.getRoles();
+    String[] strRoles = signUpRequest.getRoles().toArray(new String[0]);
     Set<Role> roles = new HashSet<>();
 
-    if (strRoles == null) {
-        Role userRole = roleRepository.findByName(ERole.USER)
-            .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-        roles.add(userRole);
-    } else {
-        strRoles.forEach(role -> {
+    for (String role : strRoles) {
         switch (role) {
-        case "admin":
-            Role adminRole = roleRepository.findByName(ERole.ADMIN)
-                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-            roles.add(adminRole);
-
-            break;
-        case "mod":
-            Role modRole = roleRepository.findByName(ERole.MODERATOR)
-                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-            roles.add(modRole);
-
-            break;
-        default:
-            Role userRole = roleRepository.findByName(ERole.USER)
-                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-            roles.add(userRole);
+            case "ADMIN":
+                Role adminRole = roleRepository.findByName(ERole.ADMIN)
+                        .orElseThrow(() -> new RuntimeException("Error: Role not found."));
+                roles.add(adminRole);
+                break;
+            case "MODERATOR":
+                Role modRole = roleRepository.findByName(ERole.MODERATOR)
+                        .orElseThrow(() -> new RuntimeException("Error: Role not found."));
+                roles.add(modRole);
+                break;
+            default:
+                Role userRole = roleRepository.findByName(ERole.USER)
+                        .orElseThrow(() -> new RuntimeException("Error: Role not found."));
+                roles.add(userRole);
         }
-        });
     }
 
     user.setRoles(roles);
