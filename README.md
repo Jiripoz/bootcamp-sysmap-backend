@@ -10,6 +10,9 @@ Este projeto é um servidor backend para uma API de redes sociais, construído u
 
 - Cadastro de novos usuários
 - Criar, ler, atualizar e deletar publicações
+- Criar, ler e deletar comentários em publicações
+- Curtir/Descurtir publicações
+- Seguir outros usuários
 
 ## Pré-requisitos
 
@@ -58,6 +61,7 @@ O servidor deve estar em execução em `http://localhost:8080/api`.
 - Comentário - Criar: `POST /api/posts/{postid}/comments`
 - Comentário - Deletar: `DELETE /api/posts/{postid}/comments/{commentid}` 
 - Likes/Deslikes em publicações: `POST /api/posts/{postid}/like`
+- Seguir - Seguir usuários por id: `GET /api/users/{userid}/follow` 
 
 ## Licença
 
